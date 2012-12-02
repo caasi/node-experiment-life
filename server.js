@@ -1,4 +1,4 @@
-var io            = require("socket.io").listen(80, {
+var io            = require("socket.io").listen(8080, {
                       "transports": ["websocket"],
                       "log level": 0
                     });
@@ -7,46 +7,13 @@ var Ree           = require("ree");
 var DreeManager   = require("./dree");
 var Life          = require("./life");
 
-var gol = Life(30, 30);
-var aol = Ree(gol);
-var game = {};
-
-EventEmitter.call(game);
-game.__proto__ = EventEmitter.prototype;
+DreeManager.register("life", Life(30, 30));
+var agent = DreeManager.request("life");
 
 setInterval(function() {
-  // buggy if you mix original object and agent object
-  aol.tick();
-  game.emit("update");
+  agent.tick();
 }, 33);
 
 io.sockets.on("connection", function(socket) {
-  var emitCMD, collectCMD, cmdBuffer = [];
-
-  socket.on("disconnect", function() {
-    if (collectCMD) aol.off("bubble", collectCMD);
-    if (emitCMD) game.off("update", emitCMD);
-    cmdBuffer = null;
-  });
-
-  socket.on("life.cmd", function(cmd) {
-    Ree.exec(aol, cmd);
-  });
-
-  collectCMD = function(cmd) {
-    if (cmd.type === "set") {
-      cmdBuffer.push(cmd);
-    }
-  };
-
-  emitCMD = function() {
-    socket.emit("life.cmds", cmdBuffer);
-    cmdBuffer = [];
-  };
-
-  aol.on("bubble", collectCMD);
-  game.on("update", emitCMD);
-
-  /* ask client for rpcs with namespace */
-  socket.emit("life", DObject.expose(gol));
+  DreeManager.connect(socket);
 });

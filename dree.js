@@ -45,42 +45,9 @@ var expose = function(o) {
   return ret;
 };
 
-var DreeManager = function(_transport) {
+var DreeManager = (function() {
   var ret = {};
   var _registered = [];
-
-  _transport.on("request", function(id, cc) {
-    var dree = _registered[id], remote;
-
-    if (dree !== undefined) {
-      remote = expose(dree.src);
-      remote.uuid = uuid.v4();
-      dree.remotes[remote.uuid] = remote;
-
-      dree.agent.on("bubble", function(cmd) {
-        _transport.emit(remote.uuid, cmd);
-      });
-
-      _transport.on(remote.uuid, function(cmd) {
-        Ree.exec(dree.agent, cmd);
-      });
-
-      cc(remote);
-    } else {
-      cc(null);
-    }
-  });
-
-  _transport.on("release", function(id, remoteID) {
-    var dree = _registered[id], remote;
-
-    if (dree !== undefined) {
-      remote = dree.remotes[remoteID];
-      dree.agent.removeListener("bubble"); // need fix
-      _transport.removeAllListener(remoteID);
-      delete dree.remotes[remoteID];
-    }
-  });
 
   ret.register = function(id, obj) {
     if (_registered[id] === undefined) {
@@ -91,6 +58,52 @@ var DreeManager = function(_transport) {
       };
     }
   }
-};
+
+  ret.request = function(id) {
+    if (_registered[id] !== undefined) {
+      return _registered[id].agent;
+    } else {
+      return undefined;
+    }
+  };
+
+  ret.connect = function(transport) {
+    transport.on("request", function(id, cc) {
+      var dree = _registered[id], remote;
+
+      if (dree !== undefined) {
+        remote = expose(dree.src);
+        remote.uuid = uuid.v4();
+        dree.remotes[remote.uuid] = remote;
+
+        dree.agent.on("bubble", function(cmd) {
+          if (cmd.type === "set")
+            transport.emit(remote.uuid, cmd);
+        });
+
+        transport.on(remote.uuid, function(cmd) {
+          Ree.exec(dree.agent, cmd);
+        });
+
+        cc(remote);
+      } else {
+        cc(null);
+      }
+    });
+
+    transport.on("release", function(id, remoteID) {
+      var dree = _registered[id], remote;
+
+      if (dree !== undefined) {
+        remote = dree.remotes[remoteID];
+        dree.agent.removeListener("bubble"); // need fix
+        transport.removeAllListener(remoteID);
+        delete dree.remotes[remoteID];
+      }
+    });
+  };
+
+  return ret;
+}());
 
 exports = module.exports = DreeManager;

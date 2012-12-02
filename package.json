@@ -1,17 +1,11 @@
 {
   "name": "life",
-  "subdomain": "caasi.life",
-  "scripts": {
-    "start": "server.js"
-  },
-  "version": "0.1.1-27",
-  "engines": {
-    "node": "0.6.x"
-  },
+  "version": "0.1.1",
   "dependencies": {
     "ree": ">=0.1.1-2",
     "socket.io": "0.9.x",
     "underscore": "*",
-    "eventemitter2": "*"
+    "eventemitter2": "*",
+    "node-uuid": "*"
   }
 }
