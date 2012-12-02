@@ -1,10 +1,10 @@
-var io            = require("socket.io").listen(8080, {
+var io            = require("socket.io").listen(80, {
                       "transports": ["websocket"],
                       "log level": 0
                     });
 var EventEmitter  = require("eventemitter2").EventEmitter2;
 var Ree           = require("ree");
-var DObject       = require("./dobject");
+var DreeManager   = require("./dree");
 var Life          = require("./life");
 
 var gol = Life(30, 30);
